@@ -2,10 +2,26 @@ import express from 'express';
 const router = express.Router();
 import userModel from '../models/userModel.js';
 import postModel from '../models/postModel.js';
+import {v2 as cloudinary} from 'cloudinary'
+import multer from 'multer'
+import dotenv from 'dotenv'
+dotenv.config();
+cloudinary.config({
+  cloud_name:process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_SECRET_KEY
+})
+// multer setup for file uploaders
+const uploads = multer({dest: 'uploads/'})
 // create post route
-router.post('/createpost',async(req,resp)=>{
+router.post('/createpost',uploads.single('image'),async(req,resp)=>{
   try {
-    const {userId,content,image} = req.body;
+    const {userId,content} = req.body;
+    let imageUrl = '';
+    if(req.file){
+      const result = await cloudinary.uploader.upload(req.file.path);
+      imageUrl = result.secure_url;
+    }
     const user = await userModel.findById(userId);
     if(!user){
       return resp.json({success:false,message:'user not found'})
@@ -14,8 +30,9 @@ router.post('/createpost',async(req,resp)=>{
     const newPost = new postModel({
       userId,
       username:user.name,
+      UserProfilePic: user.image,
       content,
-      image,
+      image: imageUrl,
       likes:[],
       comments:[]
     })
