@@ -10,6 +10,7 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_SECRET_KEY
 })
+console.log(process.env.CLOUDINARY_NAME,process.env.CLOUDINARY_API_KEY,process.env.CLOUDINARY_SECRET_KEY)
 // multer setup for file uploaders
 const upload = multer({dest:'uploads/'})
 // sign-up route
@@ -17,7 +18,7 @@ router.post('/signup',upload.single('image'),async(req,resp)=>{
 try {
   const {name,email,password} = req.body;
   
-  
+  console.log(req.body)
   let imageUrl = '';
   if(req.file){
     const result = await cloudinary.uploader.upload(req.file.path);
@@ -28,8 +29,10 @@ try {
     return resp.json({success:false,message:'user already exists'})
   }
   const newUser = new userModel({name,email,password,image:imageUrl})
+  console.log(req.file)
+  console.log(newUser)
   await newUser.save();
-  resp.json({message:'user registered succcesfully',user:newUser})
+  resp.json({success:true,message:'user registered succcesfully',user:newUser})
 } catch (error) {
   console.log(error)
   resp.status(500).json({success:false,message:'internal server error'})
